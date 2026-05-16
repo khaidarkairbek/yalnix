@@ -1,0 +1,30 @@
+{   
+    "env": {
+        "YALNIX_FRAMEWORK": "/thayerfs/courses/26spring/cosc058/workspace/yalnix_framework"
+    },
+    "configurations": [
+        {
+            "name": "Yalnix",
+            "includePath": [
+                "${workspaceFolder}/include",
+                "${YALNIX_FRAMEWORK}/include"
+            ],
+            "defines": [
+                "_GNU_SOURCE",
+                "LINUX"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/include",
+                    "${workspaceFolder}/src",
+                    "${YALNIX_FRAMEWORK}/include"
+                ]
+            }
+        }
+    ],
+    "version": 4
+}
