@@ -1,6 +1,7 @@
 #include <yalnix.h>
 #include "trap_handler.h"
 #include "syscalls.h"
+#include "pcb.h"
 
 /*
   On the kernel start, write the handlers into `REG_VECTOR_BASE` with WriteRegister 
@@ -17,7 +18,8 @@ void handle_trap_kernel(UserContext *uctx) {
     Such a trap is used by user processes to request some type of service from the operating system kernel,
     such as creating a new process, allocating memory, or performing I/O
   */
-  int return_code = 0; 
+  int return_code = 0;
+  g_current_process->uctx = *uctx;  
 
   switch (uctx->code) {
   /*
@@ -127,7 +129,8 @@ void handle_trap_kernel(UserContext *uctx) {
     // TODO: panic
   }
 
-  uctx->regs[0] = return_code; 
+  (g_current_process->uctx).regs[0] = return_code;
+  *uctx = g_current_process->uctx;
 }
 
 extern void handle_trap_clock(UserContext *uctx) {
