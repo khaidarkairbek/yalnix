@@ -1,7 +1,9 @@
 #include "syscalls.h"
 #include "pcb.h"
+#include "kernel.h"
+#include "scheduler.h"
 
-#include "ykernel.h"
+#include <ykernel.h>
 
 int kernel_Nop (int a, int b, int c, int d) {
   return 0; 

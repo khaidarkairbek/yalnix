@@ -1,7 +1,8 @@
+#include <ykernel.h>
+
 #include "pcb.h"
 #include "frame.h"
-
-#include <ykernel.h>
+#include "kernel.h"
 
 // Creates fresh pcb, but does not load the program
 pcb_t *pcb_create(void) {
@@ -24,7 +25,7 @@ pcb_t *pcb_create(void) {
 
   p->pid = helper_new_pid(p->region_1);
 
-  for (int i = 0; i < KERNEL_STACK_MAXSIZE / PAGESIZE; i++) {
+  for (int i = 0; i < KSTACK_NPG; i++) {
     int frame = frame_alloc(); 
     if (frame == -1) {
       for (int j = 0; j < i; j++) {

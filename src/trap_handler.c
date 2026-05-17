@@ -2,6 +2,7 @@
 #include "trap_handler.h"
 #include "syscalls.h"
 #include "pcb.h"
+#include "kernel.h"
 
 /*
   On the kernel start, write the handlers into `REG_VECTOR_BASE` with WriteRegister 

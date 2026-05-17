@@ -2,6 +2,7 @@
 #define _yalnix_pcb_h
 
 #include <hardware.h>
+#include "kernel.h"
 
 enum proc_state { BLOCKED, RUNNABLE, RUNNING, ZOMBIE }; 
 
@@ -21,7 +22,7 @@ typedef struct pcb_s {
   int pid;  
 
   pte_t *region_1; 
-  pte_t kstack[KERNEL_STACK_MAXSIZE / PAGESIZE]; 
+  pte_t kstack[KSTACK_NPG]; 
   unsigned int ubrk; 
   unsigned int ustack_low; 
   
@@ -41,8 +42,6 @@ typedef struct pcb_s {
 
   struct pcb_s *next; // for the process queue
 } pcb_t; 
-
-extern pcb_t *g_current_process;  // global currently running process
 
 // Creates fresh pcb, but does not load the program
 pcb_t *pcb_create(void); 
