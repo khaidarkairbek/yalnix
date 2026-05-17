@@ -98,7 +98,8 @@ pcb_t *pcb_create(void) {
   p->pid = helper_new_pid(p->region_1); 
 
   p->ubrk = 0;
-  p->ustack_low = 0; 
+  p->ustack_low = 0;
+  p->udata_end = 0; 
 
   p->state = RUNNABLE;
   p->waiting_on = WAIT_NONE; 

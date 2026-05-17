@@ -5,5 +5,6 @@ void frame_init(unsigned int pmem_size);
 int  frame_alloc(void); 
 void frame_free(int pfn);
 int  frames_available(void);
+void frame_reserve(int pfn); 
 
 #endif

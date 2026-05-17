@@ -11,6 +11,7 @@ static unsigned char *frame_bitmap = NULL;
 #define BIT_CLR(bm, i)  (bm[(i) / 8] &= ~(1 << ((i) % 8)))
 
 void frame_init(unsigned int pmem_size) {
+  TracePrintf(0, "frame_init: pmemsize=%d\n", pmem_size); 
   total_frames = pmem_size / PAGESIZE; 
   int bytes = (total_frames + 7) / 8;
 
@@ -41,17 +42,29 @@ int frame_alloc(void) {
 }
 void frame_free(int pfn) {
   if (pfn < 0 || pfn > total_frames) {
-    // invalid fpn
+    TracePrintf(0, "frame_free: invalid pfn %d\n", pfn);
     return; 
   }
 
   if (BIT_GET(frame_bitmap, pfn)) {
-    // already free
+    TracePrintf(0, "frame_free: double free %d\n", pfn);
     return; 
   }
 
   BIT_SET(frame_bitmap, pfn);
   free_count++; 
+}
+
+void frame_reserve(int pfn) {
+  if (pfn < 0 || pfn >= total_frames) {
+    TracePrintf(0, "frame_reserve: invalid pfn %d\n", pfn);
+    return;
+  }
+
+  if (BIT_GET(frame_bitmap, pfn)) {
+    BIT_CLR(frame_bitmap, pfn);
+    free_count--;
+  }
 }
 
 int  frames_available(void) {

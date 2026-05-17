@@ -1,4 +1,5 @@
 #include <yalnix.h>
+#include <ykernel.h>
 #include "trap_handler.h"
 #include "syscalls.h"
 #include "pcb.h"
@@ -16,8 +17,8 @@
 static void (*vector_table[TRAP_VECTOR_SIZE])(UserContext *); 
 
 static void handle_trap_unhandled(UserContext *uctx) {
-
-  return; 
+  TracePrintf(1, "TRAP_UNHANDLED\n"); 
+  return;
 }
 
 /* Trap Vector Table Initializer */
@@ -44,6 +45,12 @@ void handle_trap_kernel(UserContext *uctx) {
     Such a trap is used by user processes to request some type of service from the operating system kernel,
     such as creating a new process, allocating memory, or performing I/O
   */
+
+  TracePrintf(0, "TRAP_KERNEL: syscall %#x\n", uctx->code);
+  uctx->regs[0] = ERROR;
+
+  return; 
+
   int return_code = 0;
   g_current_process->uctx = *uctx;  
 
@@ -176,6 +183,8 @@ extern void handle_trap_clock(UserContext *uctx) {
 
       *uctx = g_current_process->uctx;
   */
+
+  TracePrintf(1, "TRAP_CLOCK\n"); 
 }
 
 extern void handle_trap_illegal(UserContext *uctx) {

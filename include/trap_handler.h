@@ -3,7 +3,8 @@
 
 #include <hardware.h>
 
-extern void handle_trap_kernel(UserContext *uctx); 
+extern void trap_init(void);
+extern void handle_trap_kernel(UserContext *uctx);
 extern void handle_trap_clock(UserContext *uctx); 
 extern void handle_trap_illegal(UserContext *uctx); 
 extern void handle_trap_memory(UserContext *uctx); 

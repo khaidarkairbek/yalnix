@@ -24,8 +24,9 @@ typedef struct pcb_s {
   pte_t *region_1; 
   pte_t kstack[KSTACK_NPG]; 
   unsigned int ubrk; 
-  unsigned int ustack_low; 
-  
+  unsigned int ustack_low;
+  unsigned int udata_end; 
+
   UserContext uctx; 
   KernelContext kctx; 
 
