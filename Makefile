@@ -9,18 +9,19 @@
 
 
 # Where's your kernel source?
-K_SRC_DIR = .
+K_SRC_DIR = src
+K_INC_DIR = include
 
 # What are the kernel c and include files? 
-K_SRCS = kernelstart.c memory.c process.c Queue.c syscalls.c trap.c idle.c re1sp.c re0sp.c kernelbrk.c template.c init.c
-K_INCS = memory.h process.h Queue.h syscalls.h trap.h idle.h init.h
+K_SRCS = yalnix.c frame.c pcb.c load_program.c syscalls.c scheduler.c trap_handler.c tty.c
+K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap_handler.h tty.h
 
 # Where's your user source?
-U_SRC_DIR = .
+U_SRC_DIR = user
 
 # What are the user c and include files?
-U_SRCS = user.c 
-U_INCS =  
+U_SRCS = init.c 
+U_INCS = 
 
 
 #==========================================================
@@ -35,7 +36,7 @@ KERNEL_ALL = yalnix
 # Automatically generate the list of sources, objects, and includes for the kernek
 KERNEL_SRCS = $(K_SRCS:%=$(K_SRC_DIR)/%)
 KERNEL_OBJS = $(KERNEL_SRCS:%.c=%.o) 
-KERNEL_INCS = $(K_INCS:%=$(K_SRC_DIR)/%) 
+KERNEL_INCS = $(K_INCS:%=$(K_INC_DIR)/%) 
 
 
 # Automatically generate the list of apps, sources, objects, and includes for your userland coden
@@ -83,7 +84,7 @@ LINK_USER = $(LINK.c) $(USER_CFLAGS) $(USER_LINK_FLAGS)
 
 USER_LIBS = $(LIBDIR)/libyuser.a
 ASFLAGS = -D__ASM__
-CPPFLAGS=  -D_FILE_OFFSET_BITS=64 -m32 -fno-builtin -I. -I$(INCDIR) -g -DLINUX -fno-stack-protector
+CPPFLAGS=  -D_FILE_OFFSET_BITS=64 -m32 -fno-builtin -I. -I$(K_INC_DIR) -I$(INCDIR) -g -DLINUX -fno-stack-protector
 
 
 ##########################
@@ -101,7 +102,7 @@ CPPFLAGS=  -D_FILE_OFFSET_BITS=64 -m32 -fno-builtin -I. -I$(INCDIR) -g -DLINUX -
 all: $(ALL)	
 
 clean:
-	rm -f *.o *~ TTYLOG* TRACE $(YALNIX_OUTPUT) $(USER_APPS) $(KERNEL_OBJS) $(USER_OBJS) core.* ~/core
+	rm -f *.o *~ DISK TTYLOG* TRACE $(YALNIX_OUTPUT) $(USER_APPS) $(KERNEL_OBJS) $(USER_OBJS) core.* ~/core
 
 count:
 	wc $(KERNEL_SRCS) $(USER_SRCS)

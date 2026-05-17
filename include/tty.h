@@ -2,6 +2,7 @@
 #define _yalnix_tty_h
 
 #include "kernel.h"
+#include "pcb.h"
 
 
 void tty_init(void); 

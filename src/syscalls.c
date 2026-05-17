@@ -61,8 +61,6 @@ void kernel_Exit (int status) {
 
   // should not reach here.
   Halt(); 
-
-  return ERROR;
 }
 
 int kernel_Wait (int *status_ptr) {

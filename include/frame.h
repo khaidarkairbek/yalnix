@@ -6,4 +6,4 @@ int  frame_alloc(void);
 void frame_free(int pfn);
 int  frames_available(void);
 
-#endif _yalnix_frame_h
+#endif

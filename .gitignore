@@ -2,3 +2,9 @@
 
 build/
 TARGET/
+DISK
+TRACE
+TTYLOG*
+*.o
+yalnix
+user/init
