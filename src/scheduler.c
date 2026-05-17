@@ -143,7 +143,7 @@ KernelContext *KCSwitch (KernelContext *kc_in, void *curr_pcb, void *next_pcb) {
   return NULL; 
 }
 
-KernelContext *KCCopy(KernelContext *kc_in, void *curr_pcb, void *new_pcb) {
+KernelContext *KCCopy(KernelContext *kc_in, void *new_pcb, void *) {
   /**
    * Used during forking the current process.
    *
