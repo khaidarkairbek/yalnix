@@ -13,6 +13,30 @@
   even though the use for some of them is currently undefined by the hardware.
 */
 
+static void (*vector_table[TRAP_VECTOR_SIZE])(UserContext *); 
+
+static void handle_trap_unhandled(UserContext *uctx) {
+
+  return; 
+}
+
+/* Trap Vector Table Initializer */
+void trap_init(void) {
+  for (int i = 0; i < TRAP_VECTOR_SIZE; i++) {
+    vector_table[i] = handle_trap_unhandled; 
+  }
+
+  vector_table[TRAP_KERNEL] = handle_trap_kernel;
+  vector_table[TRAP_CLOCK] = handle_trap_clock;
+  vector_table[TRAP_MEMORY] = handle_trap_memory;
+  vector_table[TRAP_ILLEGAL] = handle_trap_illegal;
+  vector_table[TRAP_MATH] = handle_trap_math;
+  vector_table[TRAP_TTY_RECEIVE] = handle_trap_tty_receive;
+  vector_table[TRAP_TTY_TRANSMIT] = handle_trap_tty_transmit;
+  vector_table[TRAP_DISK] = handle_trap_disk;
+  WriteRegister(REG_VECTOR_BASE, (unsigned int)vector_table);
+}; 
+
 void handle_trap_kernel(UserContext *uctx) {
   /*
     TRAP_KERNEL
@@ -127,8 +151,8 @@ void handle_trap_kernel(UserContext *uctx) {
     return_code = kernel_Reclaim((int)uctx->regs[0]);
     break; 
 
-  default: 
-    // TODO: panic
+  default:
+    Halt(); 
   }
 
   (g_current_process->uctx).regs[0] = return_code;
@@ -139,16 +163,35 @@ extern void handle_trap_clock(UserContext *uctx) {
   /*
     TRAP_CLOCK
     Results from the machine’s hardware clock, which generates periodic clock interrupts
+    If there are runnable processes in ready queue, perform a context switch to the next process.
+    Otherwise, dispatch idle. Also, responsible for waking the processes with Delay expired.
+
+    Pseudocode:
+      g_current_process->uctx = *uctx;
+      // Wake any processes whose delay expired
+
+      update_delay();
+
+      schedule(); 
+
+      *uctx = g_current_process->uctx;
   */
-  
 }
 
 extern void handle_trap_illegal(UserContext *uctx) {
   /*
     TRAP_ILLEGAL
-    Results from the execution of an illegal instruction by the currently executing user process. 
-    An illegal instruction can be an undefined machine language opcode, an illegal addressing mode, 
+    Results from the execution of an illegal instruction by the currently executing user process.
+    An illegal instruction can be an undefined machine language opcode, an illegal addressing mode,
     or a privileged instruction when not in kernel mode
+
+    Abort the currently running process but continue running other processes.
+    Pseudocode:
+    g_current_process->uctx = *uctx;
+
+    pcb_terminate(g_current_process, ERROR); 
+
+    *uctx = g_current_process->uctx;
   */
 }
 
@@ -156,10 +199,56 @@ extern void handle_trap_memory(UserContext *uctx) {
   /*
     TRAP_MEMORY
     Results from a disallowed memory access by the current user process.
-    The access may be disallowed because: 
+    The access may be disallowed because:
     - the address is outside the virtual address range of the hardware (outside Region 0 and Region 1)
     - the address is not mapped in the current page tables
     - the access violates the page protection specified in the corresponding page table entry
+
+    If the faulting address is in Region 1, below the current stack low and
+    above the current break and red zone, grow the stack to cover.
+
+    Otherwise, terminate the process.
+
+    Pseudocode:
+    g_current_process->uctx = *uctx;
+
+    address = uctx->address;
+
+    if address < VMEM_1_BASE or address > VMEM_1_LIMIT:
+      pcb_terminate(g_current_process, ERROR);
+      *uctx = g_current_process->uctx;
+      return
+
+    if address >= g_current_process->ustack_low:
+      pcb_terminate(g_current_process, ERROR);
+      *uctx = g_current_process->uctx;
+      return
+
+    if address < g_current_process->ubrk + PAGESIZE:
+      pcb_terminate(g_current_process, ERROR);
+      *uctx = g_current_process->uctx;
+      return
+
+    // Stack growth
+    new_low_page = address >> PAGESHIFT
+    old_low_page = g_current_process->ustack_low >> PAGESHIFT
+
+    if frames_available() < (old_low_page - new_low_page):
+      pcb_terminate(g_current_process, ERROR);
+      *uctx = g_current_process->uctx;
+      return
+
+    for (vpn = new_low_page; vpn < old_low_page; vpn++)
+      region_1_index = vpn.- (VMEM_1_BASE >> PAGESHIFT);
+      frame = frame_alloc()
+      g_current_process->region_1[region_1_index].valid = 1; 
+      g_current_process->region_1[region_1_index].prot = PROT_READ | PROT_WRITE; 
+      g_current_process->region_1[region_1_index].pfn = frame
+      
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1)
+    g_current_process->ustack_low = new_low_page << PAGESHIFT
+
+    *uctx = g_current_process->uctx;
   */
 }
 
@@ -168,6 +257,13 @@ extern void handle_trap_math(UserContext *uctx) {
     TRAP_MATH
     Results from any arithmetic error from an instruction executed by the current user process, 
     such as division by zero or an arithmetic overflow
+
+    Pseudocode: 
+    g_current_process->uctx = *uctx;
+
+    pcb_terminate(g_current_process, ERROR); 
+
+    *uctx = g_current_process->uctx;
   */
 }
 
@@ -176,6 +272,24 @@ extern void handle_trap_tty_receive(UserContext *uctx) {
     TRAP_TTY_RECEIVE
     Generated by the terminal device controller hardware, when a complete line of input is available 
     from one of the terminals attached to the system
+
+    Read the line into kernel buffer, wake blocked reader. 
+
+    Pseudocode: 
+    g_current_process->uctx = *uctx;
+
+    tty_id = uctx->code
+    buf = malloc(TERMINAL_MAX_LINE)
+    if buf == NULL
+      // silently dropping line
+      // TODO: figure out what to do
+      *uctx = g_current_process->uctx;
+      return
+
+    len = TtyReceive(tty_id, buf, TERMINAL_MAX_LINE)
+    tty_receive_line(tty_id, buf, len)
+
+    *uctx = g_current_process->uctx;
   */
 }
 
@@ -185,6 +299,14 @@ extern void handle_trap_tty_transmit(UserContext *uctx) {
     Generated by the terminal device controller hardware, when the current buffer of data 
     previously given to the controller on a TtyTransmit instruction has been completely sent to
     the terminal
+
+    Wake the writer that initiated a transmit
+
+    Pseudocode: 
+    g_current_process->uctx = *uctx;
+    tty_id = uctx->code
+    tty_transmit_complete(tty_id)
+    *uctx = g_current_process->uctx;
   */
 }
 
@@ -192,5 +314,7 @@ extern void handle_trap_disk(UserContext *uctx) {
   /*
     TRAP_DISK
     generated by the disk when it completes an operation
+
+    TODO: ignore it for now. 
   */
 }
