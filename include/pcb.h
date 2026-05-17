@@ -30,7 +30,8 @@ typedef struct pcb_s {
   KernelContext kctx; 
 
   enum proc_state state;
-  enum wait_reason waiting_on; 
+  enum wait_reason waiting_on;
+  int wait_arg; 
 
   struct pcb_s *parent;
   struct pcb_s *children; // head of children list

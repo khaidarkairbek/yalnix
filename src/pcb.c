@@ -102,6 +102,7 @@ pcb_t *pcb_create(void) {
 
   p->state = RUNNABLE;
   p->waiting_on = WAIT_NONE; 
+  p->wait_arg = 0; 
 
   p->parent = NULL;
   p->children = NULL;
