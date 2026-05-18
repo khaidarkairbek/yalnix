@@ -1,7 +1,6 @@
 #ifndef _yalnix_pcb_h
 #define _yalnix_pcb_h
 
-#include <hardware.h>
 #include "kernel.h"
 
 enum proc_state { BLOCKED, RUNNABLE, RUNNING, ZOMBIE }; 
@@ -45,18 +44,19 @@ typedef struct pcb_s {
   struct pcb_s *next; // for the process queue
 } pcb_t; 
 
-// Creates fresh pcb, but does not load the program
+/* Creates fresh PCB without loading program */
 pcb_t *pcb_create(void); 
 
+/* Terminates PCB and calls destroy if needed */
 void pcb_terminate(pcb_t *, int);
 
-// Frees the resources and state held by pcb
+/* Frees all the remaining resources abd frees PCB */
 void pcb_destroy(pcb_t *); 
 
-// Used for fork (allocates new PCB and clone the state)
+/* Clones PCB and parent state */
 int pcb_clone(pcb_t *parent, pcb_t **child_out); 
 
-// Used to load the program into the current process
+/* Loads the user program into PCB*/
 int pcb_load_program(pcb_t *p, char *filename, char **argv); 
 
 #endif
