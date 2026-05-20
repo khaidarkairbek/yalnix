@@ -305,11 +305,6 @@ int pcb_load_program(pcb_t *p, char *filename, char **argv) {
    * text, data, stack and initial UserContext
    * If LoadProgram fails, terminate the process
    * Returns 0 on success.
-   * 
-   * p->ubrk = (data_pg1 + data_npg) << PAGESHIFT  + VMEM_1_BASE
-   * p->ustack_low = (MAX_PT_LEN - stack_npg) << PAGESHIFT + VMEM_1_BASE
-   * 
-   * return 0
    */
 
   // Free all of Region 1
@@ -326,9 +321,5 @@ int pcb_load_program(pcb_t *p, char *filename, char **argv) {
     pcb_terminate(p, ERROR); 
   }
 
-  Halt(); 
-
-  //TODO: set p->ubrk, p->udata_end, p->ustack_low
-
-  return 0;
+  return SUCCESS;
 }

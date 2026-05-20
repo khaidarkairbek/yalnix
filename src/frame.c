@@ -37,6 +37,8 @@ int frame_alloc(void) {
     }
   }
 
+  TracePrintf(0, "frame_alloc: out of physical memory\n");
+  
   // out of physical memory
   return -1; 
 }
