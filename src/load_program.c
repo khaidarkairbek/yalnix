@@ -172,21 +172,56 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
   if (frames_available() < li.t_npg + data_npg + stack_npg) {
     close(fd);
     return KILL;
-  } 
+  }
+
+  int new_frame; 
 
   for (int index = text_pg1; index < text_pg1 + li.t_npg; index++) {
+    new_frame = frame_alloc(); 
+    if (new_frame == -1) {
+      for (int j = text_pg1; j < index; j++) {
+        frame_free(proc->region_1[j].pfn); 
+        proc->region_1[j].valid = 0; 
+      }
+
+      close(fd);
+      return KILL; 
+    }
+
     proc->region_1[index].valid = 1; 
     proc->region_1[index].prot = PROT_READ | PROT_WRITE; 
-    proc->region_1[index].pfn = frame_alloc();
+    proc->region_1[index].pfn = new_frame;
   }
 
   for (int index = data_pg1; index < data_pg1 + data_npg; index++) {
+    new_frame = frame_alloc(); 
+    if (new_frame == -1) {
+      for (int j = data_pg1; j < index; j++) {
+        frame_free(proc->region_1[j].pfn); 
+        proc->region_1[j].valid = 0; 
+      }
+
+      close(fd);
+      return KILL; 
+    }
+
     proc->region_1[index].valid = 1; 
     proc->region_1[index].prot = PROT_READ | PROT_WRITE;
     proc->region_1[index].pfn = frame_alloc(); 
   }
 
   for (int index = MAX_PT_LEN - 1; index > MAX_PT_LEN - stack_npg - 1; index--) {
+    new_frame = frame_alloc(); 
+    if (new_frame == -1) {
+      for (int j = MAX_PT_LEN - 1; j > index; j--) {
+        frame_free(proc->region_1[j].pfn); 
+        proc->region_1[j].valid = 0; 
+      }
+
+      close(fd);
+      return KILL; 
+    }
+
     proc->region_1[index].valid = 1; 
     proc->region_1[index].prot = PROT_READ | PROT_WRITE;
     proc->region_1[index].pfn = frame_alloc();
@@ -260,6 +295,10 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
   free(argbuf);
   *cpp++ = NULL;			/* the last argv is a NULL pointer */
   *cpp++ = NULL;			/* a NULL pointer for an empty envp */
+
+  /* Update PSB's view of Region 1 Layout */
+  proc->ubrk = proc->udata_end = ((data_pg1 + data_npg) << PAGESHIFT) + VMEM_1_BASE; 
+  proc->ustack_low = ((MAX_PT_LEN - stack_npg) << PAGESHIFT ) + VMEM_1_BASE; 
 
   return SUCCESS;
 }
