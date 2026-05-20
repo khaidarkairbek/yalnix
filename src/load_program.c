@@ -11,6 +11,7 @@
 #include <load_info.h>
 
 #include "load_program.h"
+#include "frame.h"
 
 /*
  *  Load a program into an existing address space.  The program comes from
@@ -135,20 +136,17 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
    * Set the new stack pointer value in the process's UserContext
    */
 
-  /* 
-   * ==>> (rewrite the line below to match your actual data structure) 
-   * ==>> proc->uc.sp = cp2; 
-   */
+  proc->uctx.sp = cp2;
 
   /*
    * Now save the arguments in a separate buffer in region 0, since
    * we are about to blow away all of region 1.
    */
   cp2 = argbuf = (char *)malloc(size);
-
-  /* 
-   * ==>> You should perhaps check that malloc returned valid space 
-   */
+  if (argbuf == NULL) {
+    close(fd);
+    return KILL; 
+  }
 
   for (i = 0; args[i] != NULL; i++) {
     TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
@@ -162,48 +160,47 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
    * allocated, and set them all to writable.
    */
 
-  /* ==>> Throw away the old region 1 virtual address space by
-   * ==>> curent process by walking through the R1 page table and,
-   * ==>> for every valid page, free the pfn and mark the page invalid.
-   */
+  for (int vpn = 0; vpn < MAX_PT_LEN; vpn++) {
+    if (proc->region_1[vpn].valid == 1) {
+      frame_free(proc->region_1[vpn].pfn);
+      proc->region_1[vpn].valid = 0; 
+    }
+  }
+
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+  if (frames_available() < li.t_npg + data_npg + stack_npg) {
+    close(fd);
+    return KILL;
+  } 
+
+  for (int index = text_pg1; index < text_pg1 + li.t_npg; index++) {
+    proc->region_1[index].valid = 1; 
+    proc->region_1[index].prot = PROT_READ | PROT_WRITE; 
+    proc->region_1[index].pfn = frame_alloc();
+  }
+
+  for (int index = data_pg1; index < data_pg1 + data_npg; index++) {
+    proc->region_1[index].valid = 1; 
+    proc->region_1[index].prot = PROT_READ | PROT_WRITE;
+    proc->region_1[index].pfn = frame_alloc(); 
+  }
+
+  for (int index = MAX_PT_LEN - 1; index > MAX_PT_LEN - stack_npg - 1; index--) {
+    proc->region_1[index].valid = 1; 
+    proc->region_1[index].prot = PROT_READ | PROT_WRITE;
+    proc->region_1[index].pfn = frame_alloc();
+  }
+
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   /*
-   * ==>> Then, build up the new region1.  
-   * ==>> (See the LoadProgram diagram in the manual.)
-   */
+  * All pages for the new address space are now in the page table.
+  */
 
   /*
-   * ==>> First, text. Allocate "li.t_npg" physical pages and map them starting at
-   * ==>> the "text_pg1" page in region 1 address space.
-   * ==>> These pages should be marked valid, with a protection of
-   * ==>> (PROT_READ | PROT_WRITE).
-   */
-
-  /*
-   * ==>> Then, data. Allocate "data_npg" physical pages and map them starting at
-   * ==>> the  "data_pg1" in region 1 address space.
-   * ==>> These pages should be marked valid, with a protection of
-   * ==>> (PROT_READ | PROT_WRITE).
-   */
-
-  /* 
-   * ==>> Then, stack. Allocate "stack_npg" physical pages and map them to the top
-   * ==>> of the region 1 virtual address space.
-   * ==>> These pages should be marked valid, with a
-   * ==>> protection of (PROT_READ | PROT_WRITE).
-   */
-
-  /*
-   * ==>> (Finally, make sure that there are no stale region1 mappings left in the TLB!)
-   */
-
-  /*
-   * All pages for the new address space are now in the page table.  
-   */
-
-  /*
-   * Read the text from the file into memory.
-   */
+  * Read the text from the file into memory.
+  */
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
@@ -225,20 +222,14 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
 
   close(fd);			/* we've read it all now */
 
-
-  /*
-   * ==>> Above, you mapped the text pages as writable, so this code could write
-   * ==>> the new text there.
-   *
-   * ==>> But now, you need to change the protections so that the machine can execute
-   * ==>> the text.
-   *
-   * ==>> For each text page in region1, change the protection to (PROT_READ | PROT_EXEC).
-   * ==>> If any of these page table entries is also in the TLB, 
-   * ==>> you will need to flush the old mapping. 
+  /**
+   * Switch Text Section to Exec and Read
    */
+  for (int index = text_pg1; index < text_pg1 + li.t_npg; index++) {
+    proc->region_1[index].prot = PROT_READ | PROT_EXEC; 
+  }
 
-
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1); 
   
   /*
    * Zero out the uninitialized data area
@@ -249,10 +240,7 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
    * Set the entry point in the process's UserContext
    */
 
-  /* 
-   * ==>> (rewrite the line below to match your actual data structure) 
-   * ==>> proc->uc.pc = (caddr_t) li.entry;
-   */
+  proc->uctx.pc = (caddr_t) li.entry; 
 
   /*
    * Now, finally, build the argument list on the new stack.
