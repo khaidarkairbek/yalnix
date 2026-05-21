@@ -54,6 +54,61 @@ int ready_empty(void) {
   return ready_head == NULL; 
 }
 
+/* Delay Queue State */
+static pcb_t *delay_head = NULL;
+static pcb_t *delay_tail = NULL; 
+
+void delay_enqueue(pcb_t *p) {
+  pcb_t *current = delay_head; 
+  if (current == NULL) {
+    delay_tail = delay_head = p;
+    p->next = NULL; 
+    return; 
+  }
+
+  while (current != NULL) {
+    if (current->next == NULL || current->next->wait_arg > p->wait_arg) {
+      p->next = current->next;
+      current->next = p;
+      
+      if (p->next == NULL) {
+        delay_tail = p; 
+      }
+
+      break; 
+    }
+
+    current = current->next; 
+  }
+}
+
+void delay_tick(void) {
+  pcb_t *current = delay_head; 
+  while (current != NULL) {
+    if (current->wait_arg > 0) {
+      current->wait_arg--; 
+    }
+
+    current = current->next; 
+  }
+}
+
+pcb_t *delay_dequeue(void) {
+  if (delay_head == NULL) return NULL; 
+  if (delay_head->wait_arg > 0) return NULL;
+
+  pcb_t *head = delay_head;
+  pcb_t *next = head->next;
+
+  delay_head = next;
+
+  if (delay_head == NULL){
+    delay_tail = NULL; 
+  }
+
+  return head;
+}
+
 /* High-Level Scheduling Operations*/
 void schedule(void) {
   /**
