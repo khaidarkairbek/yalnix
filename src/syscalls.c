@@ -4,6 +4,7 @@
 #include "scheduler.h"
 #include "validate.h"
 #include "frame.h"
+#include "tty.h"
 
 #include <ykernel.h>
 
@@ -192,69 +193,79 @@ int kernel_TtyRead (int tty_id, void *buf, int len){
    *
    * If input is available, return immediately. Otherwise block until TRAP_TTY_RECEIVE handler.
    * Returns the number of bytes copied. If greater than len, wait for the next read.
-   *
-   * Pseudocode:
-   * if tty_id < 0 or tty_id >= NUM_TERMINALS:
-   *  return ERROR;
-   *
-   * if len < 0:
-   *  return ERROR;
-   * if len == 0:
-   *  return 0;
-   *
-   * if validate_user_buffer(buf, len, PROT_WRITE) == ERROR:
-   *  return ERROR
-   *
-   * while true:
-   *  if tty_has_input(tty_id):
-   *    n = tty_consume_input(tty_id, buf, len)
-   *    return n
-   *
-   *  g_current_process->state = BLOCKED;
-   *  g_current_process->waiting_on = WAIT_TTY_READ; 
-   *  g_current_process->wait_arg   = tty_id
-   *  
-   *  schedule()
-   *  // When wake up, recheck the terminal
-   * 
    */
-  return ERROR; 
+
+  if (tty_id < 0 || tty_id >= NUM_TERMINALS) {
+    return ERROR; 
+  }
+
+  if (len < 0) {
+    return ERROR; 
+  }
+
+  if (len == 0) {
+    return SUCCESS; 
+  }
+
+  if (validate_user_buffer(buf, len, PROT_WRITE) == ERROR) {
+    return ERROR;
+  }
+
+  for (;;) {
+    if (tty_has_input(tty_id)) {
+      return tty_consume_input(tty_id, buf, len); 
+    }
+
+    g_current_process->state = BLOCKED; 
+    g_current_process->waiting_on = WAIT_TTY_READ;
+    g_current_process->wait_arg = tty_id;
+
+    tty_add_read_waiter(g_current_process, tty_id);
+
+    schedule();
+
+    // When wake up, recheck the terminal
+  }
+  return SUCCESS; 
 }
 int kernel_TtyWrite (int tty_id, void *buf, int len){
   /**
    * Write len bytes from buffer to terminal
-   * Blocks until all bytes have been written. May require multiple TtyTransmit calls.
-   *
-   * Pseudocode:
-   * if tty_id < 0 or tty_id >= NUM_TERMINALS:
-   *    return ERROR;
-   *
-   * if len < 0:
-   *    return ERROR;
-   *
-   * if len == 0:
-   *    return 0;
-   *
-   * if validate_user_buffer(buf, len, PROT_READ) == ERROR:
-   *  return ERROR
-   *
-   * // kernel-side buffer
-   * kbuf = malloc(len)
-   * if kbuf == NULL:
-   *  return ERROR
-   * memcpy(kbuf, buf, len);
-   *
-   * tty_write_start(tty_id, kbuf, len, g_current_process)
-   *
-   * g_current_process->state = BLOCKED;
-   * g_current_process->waiting_on = WAIT_TTY_WRITE;
-   * g_current_process->wait_arg = tty_id
-   *
-   * schedule();
-   *
-   * return len; 
+   * Blocks until all bytes have been written. May require multiple TtyTransmit calls. 
    */
-  return ERROR; 
+
+  if (tty_id < 0 || tty_id >= NUM_TERMINALS){
+    return ERROR; 
+  }
+
+  if (len < 0){
+    return ERROR; 
+  }
+
+  if (len == 0) {
+    return SUCCESS; 
+  }
+
+  if (validate_user_buffer(buf, len, PROT_READ) == ERROR) {
+    return ERROR; 
+  } 
+
+  // Kernel-side buffer
+  void *kbuf = malloc(len); 
+  if (kbuf == NULL) {
+    TracePrintf(0, "kernel_TtyWrite: malloc failed\n");
+    return ERROR; 
+  }
+
+  tty_write_start(tty_id, kbuf, len, g_current_process);
+
+  g_current_process->state = BLOCKED;
+  g_current_process->waiting_on = WAIT_TTY_WRITE;
+  g_current_process->wait_arg = tty_id;
+
+  schedule(); 
+
+  return len;
 }
 
 int kernel_ReadSector (int, void *){
