@@ -91,22 +91,21 @@ void delay_tick(void) {
 
     current = current->next; 
   }
-}
 
-pcb_t *delay_dequeue(void) {
-  if (delay_head == NULL) return NULL; 
-  if (delay_head->wait_arg > 0) return NULL;
+  // Dequeue the processes that have waited enough
+  while (delay_head != NULL && delay_head->wait_arg <= 0) {
+    current = delay_head;
+    delay_head = delay_head->next;
 
-  pcb_t *head = delay_head;
-  pcb_t *next = head->next;
-
-  delay_head = next;
-
-  if (delay_head == NULL){
-    delay_tail = NULL; 
+    current->state = RUNNABLE;
+    current->waiting_on = WAIT_NONE;
+    current->next = NULL; 
+    ready_enqueue(current);
   }
 
-  return head;
+  if (delay_head == NULL) {
+    delay_tail = NULL; 
+  }
 }
 
 /* High-Level Scheduling Operations*/

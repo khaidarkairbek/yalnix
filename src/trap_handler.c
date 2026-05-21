@@ -172,19 +172,16 @@ extern void handle_trap_clock(UserContext *uctx) {
     Results from the machine’s hardware clock, which generates periodic clock interrupts
     If there are runnable processes in ready queue, perform a context switch to the next process.
     Otherwise, dispatch idle. Also, responsible for waking the processes with Delay expired.
-
-    Pseudocode:
-      g_current_process->uctx = *uctx;
-      // Wake any processes whose delay expired
-
-      update_delay();
-
-      schedule(); 
-
-      *uctx = g_current_process->uctx;
   */
+  g_current_process->uctx = *uctx;
 
-  TracePrintf(1, "TRAP_CLOCK\n"); 
+  TracePrintf(1, "TRAP_CLOCK\n");
+
+  delay_tick();
+
+  schedule(); 
+
+  *uctx = g_current_process->uctx;  
 }
 
 extern void handle_trap_illegal(UserContext *uctx) {
@@ -195,13 +192,12 @@ extern void handle_trap_illegal(UserContext *uctx) {
     or a privileged instruction when not in kernel mode
 
     Abort the currently running process but continue running other processes.
-    Pseudocode:
-    g_current_process->uctx = *uctx;
-
-    pcb_terminate(g_current_process, ERROR); 
-
-    *uctx = g_current_process->uctx;
   */
+  g_current_process->uctx = *uctx;
+
+  pcb_terminate(g_current_process, ERROR); 
+
+  *uctx = g_current_process->uctx; 
 }
 
 extern void handle_trap_memory(UserContext *uctx) {

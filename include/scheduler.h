@@ -13,7 +13,6 @@ int ready_empty(void);
 /* Delay Queue Operations */
 void delay_enqueue(pcb_t *);
 void delay_tick(void);
-pcb_t *delay_dequeue(void); 
 
 /* Choose the next process to run*/
 void schedule(void); 
