@@ -50,3 +50,54 @@ int validate_user_buffer(const void *buf, int len, int prot) {
 
   return SUCCESS; 
 }
+
+int validate_user_string(const char *str) {
+  if (str == NULL)
+    return ERROR;
+
+  unsigned int addr = (unsigned int)str; 
+  if (addr < VMEM_1_BASE || addr > VMEM_1_LIMIT) {
+    TracePrintf(1, "validate_user_string: %p outside Region 1\n", str);
+    return ERROR; 
+  }
+
+  pte_t *r1 = g_current_process->region_1;
+  unsigned int r1_base = VMEM_1_BASE >> PAGESHIFT; 
+
+  /* Track which page we've most recently validated */
+  unsigned int current_vpn = (unsigned int)-1; 
+  for (int i = 0; i < MAX_USER_STRING_LEN; i++) {
+    unsigned int byte_addr = addr + i; 
+
+    if (byte_addr >= VMEM_1_LIMIT) {
+      TracePrintf(1, "validate_user_string: walked past Region 1\n");
+      return ERROR; 
+    }
+
+    unsigned int vpn = byte_addr >> PAGESHIFT; 
+
+    if (vpn != current_vpn) {
+      unsigned int idx = vpn - r1_base;
+      if (r1[idx].valid == 0) {
+        TracePrintf(1, "validate_user_string: pid=%d vpn=%u not mapped\n", g_current_process->pid, vpn);
+        return ERROR;
+      }
+
+      if (!(r1[idx].prot & PROT_READ)) {
+        TracePrintf(1, "validate_user_string: pid=%d vpn=%u not readable (prot=0x%x)\n", g_current_process->pid, vpn, r1[idx].prot);
+        return ERROR;
+      }
+
+      current_vpn = vpn; 
+    }
+
+    /* Safe to dereference: the page is mapped and readable. */
+    if (((const char *)byte_addr)[0] == '\0') {
+      return SUCCESS;
+    }
+  }
+
+  /* We are past MAX_STRING_LEN */
+  TracePrintf(1, "validate_user_string: no '\\0' within %d bytes\n", MAX_USER_STRING_LEN);
+  return ERROR;
+}

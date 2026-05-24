@@ -78,6 +78,9 @@ void handle_trap_kernel(UserContext *uctx) {
   case YALNIX_DELAY:
     return_code = kernel_Delay((int)uctx->regs[0]);
     break; 
+  case YALNIX_WAIT: 
+    return_code = kernel_Wait((int *)uctx->regs[0]);
+    break;
   /*
     I/O Syscalls
   */

@@ -143,8 +143,11 @@ void pcb_terminate(pcb_t *p, int status) {
    * If p is the init process, halt.
    */
 
-  p->exit_status = status; 
-  //TODO: if p is init process, Halt
+  p->exit_status = status;
+  if (p == g_init_process) {
+    TracePrintf(0, "init exited; halting\n");
+    Halt();
+  }
 
   // Free Region 1 frames
   for (int vpn = 0; vpn < MAX_PT_LEN; vpn++) {
@@ -183,7 +186,6 @@ void pcb_terminate(pcb_t *p, int status) {
 
   // Current process is either zombie or freed
   // Schedule some other process
-  g_current_process = NULL; 
   schedule(); 
 
   TracePrintf(0, "pcb_terminate: unexpected return from schedule\n"); 
@@ -315,11 +317,13 @@ int pcb_load_program(pcb_t *p, char *filename, char **argv) {
     }
   }
 
-  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1); 
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
-  if (LoadProgram(filename, argv, p) != 0) {
-    pcb_terminate(p, ERROR); 
+  int rc = LoadProgram(filename, argv, p); 
+  if (rc == KILL) {
+    TracePrintf(0, "pcb_load_program: KILL from LoadProgram, terminating pid=%d\n", p->pid);
+    pcb_terminate(p, ERROR);
   }
 
-  return SUCCESS;
+  return rc;
 }

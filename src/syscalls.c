@@ -35,28 +35,39 @@ int kernel_Fork (void) {
 int kernel_Exec (char *filename, char **argv) {
   /**
    * Replaces the current process's program
-   *
-   * Pseudocode:
-   * if validate_filename(filename) == ERROR:
-   *  return ERROR;
-   *
-   * if validate_arguments(argv) == ERROR:
-   *  return ERROR;
-   *
-   * if pcb_load_program(g_current_process, filename, argv) == ERROR:
-   *  return ERROR;
-   *
-   * return 0; 
    */
 
-  // TODO: Validate filename 
-  // TODO: Validate arguments
+  /* Validate filename */
+  if (validate_user_string(filename) == ERROR) {
+    TracePrintf(1, "kernel_Exec: validate_user_string failed\n"); 
+    return ERROR;
+  }
 
-  if (pcb_load_program(g_current_process, filename, argv) == ERROR) {
+  /* Validate argv array */
+  if (argv == NULL)
+    return ERROR; 
+
+  if (validate_user_buffer(argv, sizeof(char *), PROT_READ) == ERROR) {
+    TracePrintf(1, "kernel_Exec: validate_user_buffer failed\n");
     return ERROR; 
   }
 
-  return SUCCESS;
+  int i;
+  for (i = 0;; i++) {
+    if (i > MAX_ARGS)
+      return ERROR; 
+
+    if (validate_user_buffer(&argv[i], sizeof(char *), PROT_READ) == ERROR) {
+      return ERROR; 
+    }
+
+    if (argv[i] == NULL) break;
+    if (validate_user_string(argv[i]) == ERROR) return ERROR;
+  }
+
+  TracePrintf(1, "Exec: pid=%d filename=%s\n", g_current_process->pid, filename);
+
+  return pcb_load_program(g_current_process, filename, argv);
 }
 
 void kernel_Exit (int status) {
