@@ -3,7 +3,8 @@
 #include "pcb.h"
 
 extern pcb_t *g_current_process;  // global currently running process
-extern pcb_t *g_idle_process; 
+extern pcb_t *g_idle_process;
+extern pcb_t *g_init_process; 
 
 /* Ready Queue Operations */
 void ready_enqueue(pcb_t *);

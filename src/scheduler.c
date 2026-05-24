@@ -1,10 +1,12 @@
 #include "scheduler.h"
+#include <ykernel.h>
 
 /**
  * The scheduler state 
  */
 pcb_t *g_current_process = NULL;
 pcb_t *g_idle_process = NULL;
+pcb_t *g_init_process = NULL; 
 
 /* Ready Queue State */
 static pcb_t *ready_head = NULL;
@@ -146,7 +148,7 @@ void context_switch(pcb_t *next) {
 
   pcb_t *prev = g_current_process;
   // Install Next's Region 1 Page Table
-  WriteRegister(REG_PTBR1, next->region_1);
+  WriteRegister(REG_PTBR1, (unsigned int)next->region_1);
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1); 
 
   // KCSwitch handles the kernel stack remapping and kctx swap
@@ -204,8 +206,8 @@ KernelContext *KCCopy(KernelContext *kc_in, void *new_pcb, void *) {
    * after the KernelContextSwitch call with its own kernel stack.
    */
 
-  pcb_t *new = (pcb_t *)new_pcb;
-  new->kctx = *kc_in; 
+  pcb_t *new_proc = (pcb_t *)new_pcb;
+  new_proc->kctx = *kc_in; 
 
   // Copy current kernel stack frames into new kernel stack frames
   // We will use scratch page just below the current kernel stack
@@ -215,12 +217,12 @@ KernelContext *KCCopy(KernelContext *kc_in, void *new_pcb, void *) {
     // Temporarily map into the scratch page
     g_region_0_pt[scratch_vpn].valid = 1;
     g_region_0_pt[scratch_vpn].prot = PROT_READ | PROT_WRITE; 
-    g_region_0_pt[scratch_vpn].pfn = new->kstack[i].pfn;
+    g_region_0_pt[scratch_vpn].pfn = new_proc->kstack[i].pfn;
     WriteRegister(REG_TLB_FLUSH, scratch_vpn << PAGESHIFT);
 
     // Copy from current kernel stack to new kernel stack
-    int src = KERNEL_STACK_BASE + i * PAGESIZE;
-    int dst = scratch_vpn << PAGESHIFT;
+    void *src = (void *)(KERNEL_STACK_BASE + i * PAGESIZE);
+    void *dst = (void *)(scratch_vpn << PAGESHIFT);
     memcpy(dst, src, PAGESIZE);
 
     g_region_0_pt[scratch_vpn].valid = 0;

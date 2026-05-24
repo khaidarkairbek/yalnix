@@ -257,8 +257,8 @@ int pcb_clone(pcb_t *parent, pcb_t **child_out) {
     g_region_0_pt[scratch_vpn].pfn = new_frame;
     WriteRegister(REG_TLB_FLUSH, scratch_vpn << PAGESHIFT);
     
-    void *src = VMEM_1_BASE + (vpn << PAGESIZE);
-    void *dst = scratch_vpn << PAGESHIFT;
+    void *src = (void *)(VMEM_1_BASE + (vpn << PAGESHIFT));
+    void *dst = (void *) (scratch_vpn << PAGESHIFT);
     memcpy(dst, src, PAGESIZE);
 
     g_region_0_pt[scratch_vpn].valid = 0; 

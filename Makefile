@@ -13,8 +13,8 @@ K_SRC_DIR = src
 K_INC_DIR = include
 
 # What are the kernel c and include files? 
-K_SRCS = yalnix.c frame.c pcb.c load_program.c syscalls.c scheduler.c trap_handler.c tty.c
-K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap_handler.h tty.h
+K_SRCS = yalnix.c frame.c pcb.c load_program.c syscalls.c scheduler.c trap_handler.c tty.c validate.c
+K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap_handler.h tty.h validate.h
 
 # Where's your user source?
 U_SRC_DIR = user

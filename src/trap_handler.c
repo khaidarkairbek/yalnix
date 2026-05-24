@@ -49,9 +49,6 @@ void handle_trap_kernel(UserContext *uctx) {
   */
 
   TracePrintf(0, "TRAP_KERNEL: syscall %#x\n", uctx->code);
-  uctx->regs[0] = ERROR;
-
-  return; 
 
   int return_code = 0;
   g_current_process->uctx = *uctx;  
@@ -90,77 +87,78 @@ void handle_trap_kernel(UserContext *uctx) {
   case YALNIX_TTY_WRITE:
     return_code = kernel_TtyWrite((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
     break;
-  /*
-    Disk Syscalls
-  */
-  case YALNIX_READ_SECTOR:
-    return_code = kernel_ReadSector((int)uctx->regs[0], (void *)uctx->regs[1]);
-    break; 
-  case YALNIX_WRITE_SECTOR:
-    return_code = kernel_WriteSector((int)uctx->regs[0], (void *)uctx->regs[1]);
-    break; 
-  /*
-    IPC Syscalls
-  */
-  case YALNIX_PIPE_INIT: 
-    return_code = kernel_PipeInit((int *) uctx->regs[0]);
-    break; 
-  case YALNIX_PIPE_READ:
-    return_code = kernel_PipeRead((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
-    break; 
-  case YALNIX_PIPE_WRITE:
-    return_code = kernel_PipeWrite((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
-    break;
+  // /*
+  //   Disk Syscalls
+  // */
+  // case YALNIX_READ_SECTOR:
+  //   return_code = kernel_ReadSector((int)uctx->regs[0], (void *)uctx->regs[1]);
+  //   break; 
+  // case YALNIX_WRITE_SECTOR:
+  //   return_code = kernel_WriteSector((int)uctx->regs[0], (void *)uctx->regs[1]);
+  //   break; 
+  // /*
+  //   IPC Syscalls
+  // */
+  // case YALNIX_PIPE_INIT: 
+  //   return_code = kernel_PipeInit((int *) uctx->regs[0]);
+  //   break; 
+  // case YALNIX_PIPE_READ:
+  //   return_code = kernel_PipeRead((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
+  //   break; 
+  // case YALNIX_PIPE_WRITE:
+  //   return_code = kernel_PipeWrite((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
+  //   break;
 
-  /*
-    Semaphore Syscalls
-  */
-  case YALNIX_SEM_INIT:
-    return_code = kernel_SemInit((int *)uctx->regs[0], (int)uctx->regs[1]);
-    break; 
-  case YALNIX_SEM_DOWN:
-    return_code = kernel_SemDown((int)uctx->regs[0]);
-    break; 
-  case YALNIX_SEM_UP:
-    return_code = kernel_SemUp((int)uctx->regs[0]);
-    break; 
-  /*
-    Lock Syscalls
-  */
-  case YALNIX_LOCK_INIT:
-    return_code = kernel_LockInit((int *)uctx->regs[0]);
-    break; 
-  case YALNIX_LOCK_ACQUIRE:
-    return_code = kernel_Acquire((int)uctx->regs[0]);
-    break; 
-  case YALNIX_LOCK_RELEASE:
-    return_code = kernel_Release((int)uctx->regs[0]);
-    break; 
+  // /*
+  //   Semaphore Syscalls
+  // */
+  // case YALNIX_SEM_INIT:
+  //   return_code = kernel_SemInit((int *)uctx->regs[0], (int)uctx->regs[1]);
+  //   break; 
+  // case YALNIX_SEM_DOWN:
+  //   return_code = kernel_SemDown((int)uctx->regs[0]);
+  //   break; 
+  // case YALNIX_SEM_UP:
+  //   return_code = kernel_SemUp((int)uctx->regs[0]);
+  //   break; 
+  // /*
+  //   Lock Syscalls
+  // */
+  // case YALNIX_LOCK_INIT:
+  //   return_code = kernel_LockInit((int *)uctx->regs[0]);
+  //   break; 
+  // case YALNIX_LOCK_ACQUIRE:
+  //   return_code = kernel_Acquire((int)uctx->regs[0]);
+  //   break; 
+  // case YALNIX_LOCK_RELEASE:
+  //   return_code = kernel_Release((int)uctx->regs[0]);
+  //   break; 
 
-  /*
-    Condition Variable Syscalls
-  */
-  case YALNIX_CVAR_INIT:
-    return_code = kernel_CvarInit((int *)uctx->regs[0]);
-    break; 
-  case YALNIX_CVAR_WAIT:
-    return_code = kernel_CvarWait((int)uctx->regs[0], (int)uctx->regs[1]);
-    break; 
-  case YALNIX_CVAR_SIGNAL:
-    return_code = kernel_CvarSignal((int)uctx->regs[0]);
-    break; 
-  case YALNIX_CVAR_BROADCAST:
-    return_code = kernel_CvarBroadcast((int)uctx->regs[0]);
-    break;
+  // /*
+  //   Condition Variable Syscalls
+  // */
+  // case YALNIX_CVAR_INIT:
+  //   return_code = kernel_CvarInit((int *)uctx->regs[0]);
+  //   break; 
+  // case YALNIX_CVAR_WAIT:
+  //   return_code = kernel_CvarWait((int)uctx->regs[0], (int)uctx->regs[1]);
+  //   break; 
+  // case YALNIX_CVAR_SIGNAL:
+  //   return_code = kernel_CvarSignal((int)uctx->regs[0]);
+  //   break; 
+  // case YALNIX_CVAR_BROADCAST:
+  //   return_code = kernel_CvarBroadcast((int)uctx->regs[0]);
+  //   break;
 
-  /*
-    Destroy the lock, cvar or semaphore
-  */
-  case YALNIX_RECLAIM:
-    return_code = kernel_Reclaim((int)uctx->regs[0]);
-    break; 
+  // /*
+  //   Destroy the lock, cvar or semaphore
+  // */
+  // case YALNIX_RECLAIM:
+  //   return_code = kernel_Reclaim((int)uctx->regs[0]);
+  //   break; 
 
   default:
+    TracePrintf(0, "handle_trap_kernel: syscall unimplemented\n"); 
     Halt(); 
   }
 
