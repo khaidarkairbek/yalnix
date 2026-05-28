@@ -207,7 +207,7 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
 
     proc->region_1[index].valid = 1; 
     proc->region_1[index].prot = PROT_READ | PROT_WRITE;
-    proc->region_1[index].pfn = frame_alloc(); 
+    proc->region_1[index].pfn = new_frame; 
   }
 
   for (int index = MAX_PT_LEN - 1; index > MAX_PT_LEN - stack_npg - 1; index--) {
@@ -224,7 +224,7 @@ int LoadProgram(char *name, char *args[], pcb_t *proc) {
 
     proc->region_1[index].valid = 1; 
     proc->region_1[index].prot = PROT_READ | PROT_WRITE;
-    proc->region_1[index].pfn = frame_alloc();
+    proc->region_1[index].pfn = new_frame;
   }
 
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);

@@ -309,20 +309,21 @@ int pcb_load_program(pcb_t *p, char *filename, char **argv) {
    * Returns 0 on success.
    */
 
-  // Free all of Region 1
-  for (int vpn = 0; vpn < MAX_PT_LEN; vpn++) {
-    if (p->region_1[vpn].valid == 1) {
-      frame_free(p->region_1[vpn].pfn);
-      p->region_1[vpn].valid = 0; 
-    }
-  }
+  // Reagion 1 is freed in LoadProgram
+  // for (int vpn = 0; vpn < MAX_PT_LEN; vpn++) {
+  //   if (p->region_1[vpn].valid == 1) {
+  //     frame_free(p->region_1[vpn].pfn);
+  //     p->region_1[vpn].valid = 0; 
+  //   }
+  // }
 
-  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+  // WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   int rc = LoadProgram(filename, argv, p); 
   if (rc == KILL) {
     TracePrintf(0, "pcb_load_program: KILL from LoadProgram, terminating pid=%d\n", p->pid);
     pcb_terminate(p, ERROR);
+    Halt(); 
   }
 
   return rc;
