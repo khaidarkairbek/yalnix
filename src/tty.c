@@ -120,7 +120,7 @@ void tty_write_start(int tty_id, void *kbuf, int len, pcb_t *writer) {
   }
 
   write_request->writer = writer;
-  write_request->kbuf;
+  write_request->kbuf = kbuf;
   write_request->total_len = len;
   write_request->sent = 0; 
   write_request->next = NULL;

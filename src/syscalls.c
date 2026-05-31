@@ -268,6 +268,8 @@ int kernel_TtyWrite (int tty_id, void *buf, int len){
     return ERROR; 
   }
 
+  memcpy(kbuf, buf, len);
+
   tty_write_start(tty_id, kbuf, len, g_current_process);
 
   g_current_process->state = BLOCKED;
