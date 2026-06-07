@@ -6,6 +6,7 @@
 #include "frame.h"
 #include "tty.h"
 #include "pipes.h"
+#include "sync.h"
 
 #include <ykernel.h>
 
@@ -340,38 +341,47 @@ int kernel_SemDown (int){
   // UNIMPLEMENTED
   return ERROR; 
 }
-int kernel_LockInit (int *){
+int kernel_LockInit (int *lock_idp){
+  if (validate_user_buffer(lock_idp, sizeof(int), PROT_READ | PROT_WRITE) == ERROR) {
+    return ERROR;
+  }
+
+  int lock_id = lock_init(); 
+  if (lock_id == ERROR)
+    return ERROR;
+
+  *lock_idp = lock_id; 
+  TracePrintf(2, "kernel_LockInit: id=%d\n", *lock_idp);
+
+  return SUCCESS; 
+}
+int kernel_Acquire (int lock_id){
+  return lock_acquire(lock_id);  
+}
+int kernel_Release (int lock_id){
+  return lock_release(lock_id); 
+}
+int kernel_CvarInit (int *cvar_idp){
   // UNIMPLEMENTED
   return ERROR; 
 }
-int kernel_Acquire (int){
+int kernel_CvarWait (int cvar_id, int lock_id){
   // UNIMPLEMENTED
   return ERROR; 
 }
-int kernel_Release (int){
+int kernel_CvarSignal (int cvar_id){
   // UNIMPLEMENTED
   return ERROR; 
 }
-int kernel_CvarInit (int *){
-  // UNIMPLEMENTED
-  return ERROR; 
-}
-int kernel_CvarWait (int, int){
-  // UNIMPLEMENTED
-  return ERROR; 
-}
-int kernel_CvarSignal (int){
-  // UNIMPLEMENTED
-  return ERROR; 
-}
-int kernel_CvarBroadcast (int){
+int kernel_CvarBroadcast (int cvar_id){
   // UNIMPLEMENTED
   return ERROR; 
 }
 
 int kernel_Reclaim (int id){
-  // UNIMPLEMENTED  
   if (pipe_destroy(id) == 0)
+    return 0; 
+  if (lock_destroy(id) == 0)
     return 0; 
   return ERROR;
 }

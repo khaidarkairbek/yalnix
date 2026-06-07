@@ -6,6 +6,7 @@
 #include "kernel.h"
 #include "scheduler.h"
 #include "pipes.h"
+#include "sync.h"
 
 static void add_child(pcb_t *parent, pcb_t *child) {
   /**
@@ -151,8 +152,13 @@ void pcb_terminate(pcb_t *p, int status) {
   }
   
   // Remove the process from pipe queues
-  if (p->state == WAIT_PIPE_READ || p->state == WAIT_PIPE_WRITE) {
+  if (p->waiting_on == WAIT_PIPE_READ || p->waiting_on == WAIT_PIPE_WRITE) {
     pipe_remove_waiter(p); 
+  }
+
+  // Remove the process from lock queues
+  if (p->waiting_on == WAIT_LOCK) {
+    lock_remove_waiter(p); 
   }
 
   // Free Region 1 frames

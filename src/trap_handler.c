@@ -124,18 +124,18 @@ void handle_trap_kernel(UserContext *uctx) {
   // case YALNIX_SEM_UP:
   //   return_code = kernel_SemUp((int)uctx->regs[0]);
   //   break; 
-  // /*
-  //   Lock Syscalls
-  // */
-  // case YALNIX_LOCK_INIT:
-  //   return_code = kernel_LockInit((int *)uctx->regs[0]);
-  //   break; 
-  // case YALNIX_LOCK_ACQUIRE:
-  //   return_code = kernel_Acquire((int)uctx->regs[0]);
-  //   break; 
-  // case YALNIX_LOCK_RELEASE:
-  //   return_code = kernel_Release((int)uctx->regs[0]);
-  //   break; 
+  /*
+    Lock Syscalls
+  */
+  case YALNIX_LOCK_INIT:
+    return_code = kernel_LockInit((int *)uctx->regs[0]);
+    break; 
+  case YALNIX_LOCK_ACQUIRE:
+    return_code = kernel_Acquire((int)uctx->regs[0]);
+    break; 
+  case YALNIX_LOCK_RELEASE:
+    return_code = kernel_Release((int)uctx->regs[0]);
+    break; 
 
   // /*
   //   Condition Variable Syscalls
