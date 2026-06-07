@@ -160,6 +160,11 @@ void pcb_terminate(pcb_t *p, int status) {
   if (p->waiting_on == WAIT_LOCK) {
     lock_remove_waiter(p); 
   }
+  
+  // Remove the process from cvar queues
+  if (p->waiting_on == WAIT_CVAR) {
+    cvar_remove_waiter(p); 
+  }
 
   // Free Region 1 frames
   for (int vpn = 0; vpn < MAX_PT_LEN; vpn++) {

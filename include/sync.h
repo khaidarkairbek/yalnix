@@ -16,9 +16,17 @@ int lock_release(int);
 int lock_destroy(int);
 void lock_remove_waiter(pcb_t *); 
 
+typedef struct cvar_s {
+  int id;
+  pcb_t *waiters;
+  struct cvar_s *next; 
+} cvar_t;
+
 int cvar_init(void); 
 int cvar_signal(int); 
 int cvar_broadcast(int); 
-int cvar_wait(int); 
+int cvar_wait(int, int);
+int cvar_destroy(int);
+void cvar_remove_waiter(pcb_t *); 
 
 #endif

@@ -175,3 +175,133 @@ void lock_remove_waiter(pcb_t *p) {
     lock = lock->next;
   }
 }
+
+static cvar_t *g_cvars = NULL; 
+
+static cvar_t *cvar_find(int id) {
+  cvar_t *cvar = g_cvars; 
+  while (cvar != NULL && cvar->id != id) {
+    cvar = cvar->next; 
+  }
+
+  return cvar; 
+}
+
+int cvar_init(void) {
+  cvar_t *cvar = malloc(sizeof(cvar_t)); 
+  if (cvar == NULL)
+    return ERROR;
+
+  cvar->id = helper_new_id();
+  cvar->waiters = NULL;
+
+  cvar->next = g_cvars;
+  g_cvars = cvar;
+
+  return cvar->id; 
+}
+int cvar_signal(int cvar_id) {
+  cvar_t *cvar = cvar_find(cvar_id); 
+  if (cvar == NULL)
+    return ERROR;
+
+  pcb_t *waiter = waiter_dequeue(&cvar->waiters); 
+  if (waiter == NULL) {
+    TracePrintf(3, "kernel_CvarSignal: cvar %d had no waiters\n", cvar_id);
+    return SUCCESS; 
+  }
+
+  waiter->state = RUNNABLE;
+  waiter->waiting_on = WAIT_NONE;
+  ready_enqueue(waiter); 
+  TracePrintf(3, "kernel_CvarSignal: cvar %d woke pid=%d\n", cvar_id, waiter->pid);
+
+  return SUCCESS; 
+}
+int cvar_broadcast(int cvar_id) {
+  cvar_t *cvar = cvar_find(cvar_id); 
+  if (cvar == NULL)
+    return ERROR;
+
+  pcb_t *waiter; 
+  int woken = 0;
+  while ((waiter = waiter_dequeue(&cvar->waiters)) != NULL) {
+    waiter->state = RUNNABLE;
+    waiter->waiting_on = WAIT_NONE;
+    ready_enqueue(waiter);
+    woken++; 
+  }
+
+  TracePrintf(3, "kernel_CvarBroadcast: cvar %d woke %d waiters\n", cvar_id, woken);
+  return SUCCESS; 
+}
+int cvar_wait(int cvar_id, int lock_id) {
+  cvar_t *cvar = cvar_find(cvar_id); 
+  if (cvar == NULL)
+    return ERROR;
+
+  if (lock_release(lock_id) != SUCCESS) {
+    TracePrintf(0, "kernel_CvarWait: pid=%d Release(%d) failed\n", g_current_process->pid, lock_id); return ERROR;
+  }
+
+  TracePrintf(3, "kernel_CvarWait: pid=%d blocking on cvar %d (released lock %d)\n", g_current_process->pid, cvar_id, lock_id);
+
+  g_current_process->state = BLOCKED;
+  g_current_process->waiting_on = WAIT_CVAR; 
+  g_current_process->wait_arg = cvar_id;
+  waiter_enqueue(&cvar->waiters, g_current_process);
+  schedule(); 
+
+  /* Need to reacquire the lock */
+  if (lock_acquire(lock_id) != SUCCESS) {
+    TracePrintf(0, "kernel_CvarWait: pid=%d Acquire(%d) failed\n", g_current_process->pid, lock_id);
+    return ERROR;
+  }
+
+  cvar = cvar_find(cvar_id); 
+  if (cvar == NULL) {
+    return ERROR; 
+  }
+
+  TracePrintf(3, "kernel_CvarWait: pid=%d woke and acquired lock %d\n", g_current_process->pid, lock_id);
+  return SUCCESS; 
+}
+int cvar_destroy(int cvar_id) {
+  cvar_t *cvar = cvar_find(cvar_id); 
+  if (cvar == NULL)
+    return ERROR;
+
+  pcb_t *waiter; 
+  while ((waiter = waiter_dequeue(&cvar->waiters)) != NULL) {
+    waiter->uctx.regs[0] = ERROR;
+    waiter->state = RUNNABLE;
+    waiter->waiting_on = WAIT_NONE;
+    ready_enqueue(waiter);
+  }
+
+  /* Remove cvar from list */
+  if (g_cvars == cvar) {
+    g_cvars = cvar->next;
+    cvar->next = NULL; 
+  } else {
+    cvar_t *prev = g_cvars; 
+    while (prev != NULL && prev->next != cvar) {
+      prev = prev->next; 
+    }
+    if (prev != NULL) {
+      prev->next = cvar->next; 
+      cvar->next = NULL; 
+    }
+  }
+
+  helper_retire_id(cvar_id);
+  free(cvar);
+  return SUCCESS; 
+}
+void cvar_remove_waiter(pcb_t *p) {
+  cvar_t *cvar = g_cvars;
+  while (cvar != NULL) {
+    if (waiter_remove(&cvar->waiters, p)) return;
+    cvar = cvar->next;
+  }
+}

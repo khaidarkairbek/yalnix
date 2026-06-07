@@ -137,21 +137,21 @@ void handle_trap_kernel(UserContext *uctx) {
     return_code = kernel_Release((int)uctx->regs[0]);
     break; 
 
-  // /*
-  //   Condition Variable Syscalls
-  // */
-  // case YALNIX_CVAR_INIT:
-  //   return_code = kernel_CvarInit((int *)uctx->regs[0]);
-  //   break; 
-  // case YALNIX_CVAR_WAIT:
-  //   return_code = kernel_CvarWait((int)uctx->regs[0], (int)uctx->regs[1]);
-  //   break; 
-  // case YALNIX_CVAR_SIGNAL:
-  //   return_code = kernel_CvarSignal((int)uctx->regs[0]);
-  //   break; 
-  // case YALNIX_CVAR_BROADCAST:
-  //   return_code = kernel_CvarBroadcast((int)uctx->regs[0]);
-  //   break;
+  /*
+    Condition Variable Syscalls
+  */
+  case YALNIX_CVAR_INIT:
+    return_code = kernel_CvarInit((int *)uctx->regs[0]);
+    break; 
+  case YALNIX_CVAR_WAIT:
+    return_code = kernel_CvarWait((int)uctx->regs[0], (int)uctx->regs[1]);
+    break; 
+  case YALNIX_CVAR_SIGNAL:
+    return_code = kernel_CvarSignal((int)uctx->regs[0]);
+    break; 
+  case YALNIX_CVAR_BROADCAST:
+    return_code = kernel_CvarBroadcast((int)uctx->regs[0]);
+    break;
 
   /*
     Destroy the lock, cvar or semaphore

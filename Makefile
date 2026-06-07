@@ -20,7 +20,7 @@ K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap
 U_SRC_DIR = user
 
 # What are the user c and include files?
-U_SRCS = init.c test_exec_child.c test_exec_parent.c test_exit.c test_fork.c test_math.c test_stack.c test_wait.c test_tty_write_simple.c test_tty_write_multi.c test_tty_write_long.c test_tty_read_simple.c test_tty_read_short.c test_pipe.c test_lock.c
+U_SRCS = init.c test_exec_child.c test_exec_parent.c test_exit.c test_fork.c test_math.c test_stack.c test_wait.c test_tty_write_simple.c test_tty_write_multi.c test_tty_write_long.c test_tty_read_simple.c test_tty_read_short.c test_pipe.c test_lock.c test_cvar.c
 U_INCS = 
 
 

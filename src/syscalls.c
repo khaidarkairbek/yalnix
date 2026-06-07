@@ -362,20 +362,26 @@ int kernel_Release (int lock_id){
   return lock_release(lock_id); 
 }
 int kernel_CvarInit (int *cvar_idp){
-  // UNIMPLEMENTED
-  return ERROR; 
+  if (validate_user_buffer(cvar_idp, sizeof(int), PROT_READ | PROT_WRITE) == ERROR) {
+    return ERROR; 
+  }
+
+  int cvar_id = cvar_init(); 
+  if (cvar_id == ERROR) return ERROR; 
+
+  *cvar_idp = cvar_id; 
+  TracePrintf(2, "kernel_CvarInit: id=%d\n", *cvar_idp);
+
+  return SUCCESS; 
 }
 int kernel_CvarWait (int cvar_id, int lock_id){
-  // UNIMPLEMENTED
-  return ERROR; 
+  return cvar_wait(cvar_id, lock_id);  
 }
 int kernel_CvarSignal (int cvar_id){
-  // UNIMPLEMENTED
-  return ERROR; 
+  return cvar_signal(cvar_id);  
 }
 int kernel_CvarBroadcast (int cvar_id){
-  // UNIMPLEMENTED
-  return ERROR; 
+  return cvar_broadcast(cvar_id);  
 }
 
 int kernel_Reclaim (int id){
@@ -383,5 +389,7 @@ int kernel_Reclaim (int id){
     return 0; 
   if (lock_destroy(id) == 0)
     return 0; 
+  if (cvar_destroy(id) == 0)
+    return 0;
   return ERROR;
 }
