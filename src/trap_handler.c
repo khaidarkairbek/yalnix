@@ -99,18 +99,18 @@ void handle_trap_kernel(UserContext *uctx) {
   // case YALNIX_WRITE_SECTOR:
   //   return_code = kernel_WriteSector((int)uctx->regs[0], (void *)uctx->regs[1]);
   //   break; 
-  // /*
-  //   IPC Syscalls
-  // */
-  // case YALNIX_PIPE_INIT: 
-  //   return_code = kernel_PipeInit((int *) uctx->regs[0]);
-  //   break; 
-  // case YALNIX_PIPE_READ:
-  //   return_code = kernel_PipeRead((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
-  //   break; 
-  // case YALNIX_PIPE_WRITE:
-  //   return_code = kernel_PipeWrite((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
-  //   break;
+  /*
+    IPC Syscalls
+  */
+  case YALNIX_PIPE_INIT: 
+    return_code = kernel_PipeInit((int *) uctx->regs[0]);
+    break; 
+  case YALNIX_PIPE_READ:
+    return_code = kernel_PipeRead((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
+    break; 
+  case YALNIX_PIPE_WRITE:
+    return_code = kernel_PipeWrite((int)uctx->regs[0], (void *)uctx->regs[1], (int)uctx->regs[2]);
+    break;
 
   // /*
   //   Semaphore Syscalls
@@ -153,12 +153,12 @@ void handle_trap_kernel(UserContext *uctx) {
   //   return_code = kernel_CvarBroadcast((int)uctx->regs[0]);
   //   break;
 
-  // /*
-  //   Destroy the lock, cvar or semaphore
-  // */
-  // case YALNIX_RECLAIM:
-  //   return_code = kernel_Reclaim((int)uctx->regs[0]);
-  //   break; 
+  /*
+    Destroy the lock, cvar or semaphore
+  */
+  case YALNIX_RECLAIM:
+    return_code = kernel_Reclaim((int)uctx->regs[0]);
+    break; 
 
   default:
     TracePrintf(0, "handle_trap_kernel: syscall unimplemented\n"); 

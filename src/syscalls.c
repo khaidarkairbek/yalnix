@@ -5,6 +5,7 @@
 #include "validate.h"
 #include "frame.h"
 #include "tty.h"
+#include "pipes.h"
 
 #include <ykernel.h>
 
@@ -290,17 +291,41 @@ int kernel_WriteSector (int, void *){
   return ERROR; 
 }
 
-int kernel_PipeInit (int *){
-  // UNIMPLEMENTED
-  return ERROR; 
+int kernel_PipeInit (int *pipe_idp){
+  if (validate_user_buffer(pipe_idp, sizeof(int), PROT_READ | PROT_WRITE) == ERROR)
+    return ERROR;
+
+  *pipe_idp = pipe_create(); 
+
+  TracePrintf(2, "kernel_PipeInit: created pipe id=%d\n", *pipe_idp);
+
+  return SUCCESS;
 }
-int kernel_PipeRead (int, void *, int){
-  // UNIMPLEMENTED
-  return ERROR; 
+int kernel_PipeRead (int pipe_id, void *buf, int len){
+  if (len < 0) return ERROR; 
+  if (len == 0) return SUCCESS; 
+  if (validate_user_buffer(buf, len, PROT_WRITE) == ERROR) {
+    return ERROR;
+  }
+
+  int read = pipe_read(pipe_id, buf, len);
+
+  TracePrintf(2, "kernel_PipeRead: id=%d read=%d\n", pipe_id, read);
+
+  return read;
 }
-int kernel_PipeWrite (int, void *, int){
-  // UNIMPLEMENTED
-  return ERROR; 
+int kernel_PipeWrite (int pipe_id, void *buf, int len){
+  if (len < 0) return ERROR; 
+  if (len == 0) return SUCCESS; 
+  if (validate_user_buffer(buf, len, PROT_READ) == ERROR) {
+    return ERROR; 
+  }
+
+  int written = pipe_write(pipe_id, buf, len); 
+
+  TracePrintf(2, "kernel_PipeWrite: id=%d written=%d\n", pipe_id, written);
+
+  return written;
 }
 
 int kernel_SemInit (int *, int){
@@ -344,7 +369,9 @@ int kernel_CvarBroadcast (int){
   return ERROR; 
 }
 
-int kernel_Reclaim (int){
-  // UNIMPLEMENTED
-  return ERROR; 
+int kernel_Reclaim (int id){
+  // UNIMPLEMENTED  
+  if (pipe_destroy(id) == 0)
+    return 0; 
+  return ERROR;
 }

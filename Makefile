@@ -13,14 +13,14 @@ K_SRC_DIR = src
 K_INC_DIR = include
 
 # What are the kernel c and include files? 
-K_SRCS = yalnix.c frame.c pcb.c load_program.c syscalls.c scheduler.c trap_handler.c tty.c validate.c
-K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap_handler.h tty.h validate.h
+K_SRCS = yalnix.c frame.c pcb.c load_program.c syscalls.c scheduler.c trap_handler.c tty.c validate.c id_helper.c pipes.c
+K_INCS = frame.h pcb.h kernel.h load_program.h pcb.h scheduler.h syscalls.h trap_handler.h tty.h validate.h id_helper.h pipes.h
 
 # Where's your user source?
 U_SRC_DIR = user
 
 # What are the user c and include files?
-U_SRCS = init.c test_exec_child.c test_exec_parent.c test_exit.c test_fork.c test_math.c test_stack.c test_wait.c test_tty_write_simple.c test_tty_write_multi.c test_tty_write_long.c test_tty_read_simple.c test_tty_read_short.c
+U_SRCS = init.c test_exec_child.c test_exec_parent.c test_exit.c test_fork.c test_math.c test_stack.c test_wait.c test_tty_write_simple.c test_tty_write_multi.c test_tty_write_long.c test_tty_read_simple.c test_tty_read_short.c test_pipe.c
 U_INCS = 
 
 

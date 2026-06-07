@@ -5,6 +5,7 @@
 #include "frame.h"
 #include "kernel.h"
 #include "scheduler.h"
+#include "pipes.h"
 
 static void add_child(pcb_t *parent, pcb_t *child) {
   /**
@@ -147,6 +148,11 @@ void pcb_terminate(pcb_t *p, int status) {
   if (p == g_init_process) {
     TracePrintf(0, "init exited; halting\n");
     Halt();
+  }
+  
+  // Remove the process from pipe queues
+  if (p->state == WAIT_PIPE_READ || p->state == WAIT_PIPE_WRITE) {
+    pipe_remove_waiter(p); 
   }
 
   // Free Region 1 frames
